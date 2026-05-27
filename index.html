@@ -1,1 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Niche CRM — Dashboard</title>
+  <meta name="description" content="Niche Consultation CRM Dashboard" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0b0b0e;
+      --bg-secondary: #0f1118;
+      --surface-card: rgba(255, 255, 255, 0.04);
+      --surface-card-hover: rgba(255, 255, 255, 0.06);
+      --blue-primary: #2b2fff;
+      --blue-glow: rgba(43, 47, 255, 0.3);
+      --text-primary: #f4f6ff;
+      --text-muted: #9ca3b7;
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --success: #33d69f;
+      --danger: #ff5e73;
+      --warning: #ffcc5c;
+      --sidebar-width: 220px;
+      --radius: 14px;
+    }
 
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-primary);
+      background: radial-gradient(circle at top right, #151932 0%, #0b0b0e 45%, #07080d 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .blob {
+      position: fixed;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { top: -120px; left: -120px; background: rgba(43, 47, 255, 0.25); }
+    .blob-2 { bottom: -160px; right: -120px; background: rgba(86, 179, 255, 0.18); }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      border-right: 1px solid var(--border-subtle);
+      background: rgba(10, 11, 16, 0.88);
+      backdrop-filter: blur(14px);
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 14px;
+    }
+
+    .brand {
+      padding: 10px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .brand h1 { margin: 0; font-size: 21px; }
+    .brand p { margin: 4px 0 0; color: var(--text-muted); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+    .nav-group { margin-top: 10px; }
+    .nav-title {
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin: 12px 10px;
+    }
+    .nav-link {
+      display: block;
+      text-decoration: none;
+      color: var(--text-muted);
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      border: 1px solid transparent;
+      transition: .2s ease;
+    }
+    .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,.03); border-color: var(--border-subtle); }
+    .nav-link.active { background: rgba(43,47,255,.25); border-color: rgba(43,47,255,.55); color: #fff; }
+
+    .logout {
+      margin-top: auto;
+      border: 1px solid rgba(255, 94, 115, 0.4);
+      color: #ff8394;
+      background: rgba(255, 94, 115, 0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .main { margin-left: var(--sidebar-width); position: relative; z-index: 1; }
+    .topbar {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(8, 9, 14, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .title h2 { margin: 0; font-size: 34px; }
+    .title p { margin: 4px 0 0; color: var(--text-muted); }
+
+    .top-right { display: flex; align-items: center; gap: 10px; }
+    .live {
+      font-size: 12px;
+      border: 1px solid rgba(51, 214, 159, .4);
+      color: #8cf0cb;
+      background: rgba(51, 214, 159, .12);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2b2fff, #53a7ff);
+    }
+
+    .content { padding: 28px 32px; }
+    .grid { display: grid; gap: 16px; }
+    .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      transition: transform .2s ease, background .2s ease;
+    }
+    .card:hover { transform: translateY(-2px); background: var(--surface-card-hover); }
+    .label {
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .value { font-size: 32px; font-weight: 800; margin: 8px 0 6px; }
+    .muted { color: var(--text-muted); font-size: 13px; }
+
+    .pipeline {
+      margin-top: 16px;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(170px, 1fr);
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .list { list-style: none; margin: 10px 0 0; padding: 0; }
+    .list li { padding: 8px 0; border-bottom: 1px solid var(--border-subtle); color: #d8dcec; font-size: 14px; }
+    .list li:last-child { border-bottom: 0; }
+
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+      border-radius: 10px;
+      height: 18px;
+      margin-top: 10px;
+    }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+    #toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: rgba(255, 94, 115, 0.14);
+      color: #ffc3cc;
+      border: 1px solid rgba(255, 94, 115, 0.38);
+      border-radius: 10px;
+      padding: 12px 16px;
+      z-index: 20;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: .25s ease;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .row-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .topbar, .content { padding-left: 16px; padding-right: 16px; }
+      .title h2 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>Niche</h1>
+      <p>CRM Platform</p>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-title">Main</div>
+      <a class="nav-link active" href="index.html">Dashboard</a>
+      <a class="nav-link" href="pages/pipeline.html">Pipeline</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-title">People</div>
+      <a class="nav-link" href="pages/cold-callers.html">Cold Callers</a>
+      <a class="nav-link" href="pages/outreachers.html">Outreachers</a>
+      <a class="nav-link" href="pages/freelancers.html">Freelancers</a>
+      <a class="nav-link" href="pages/clients.html">Clients</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-title">Work</div>
+      <a class="nav-link" href="pages/tasks.html">Tasks</a>
+      <a class="nav-link" href="pages/projects.html">Projects</a>
+      <a class="nav-link" href="pages/finance.html">Finance</a>
+      <a class="nav-link" href="pages/analytics.html">Analytics</a>
+      <a class="nav-link" href="pages/reports.html">Reports</a>
+    </div>
+
+    <a class="logout" href="#">Logout</a>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title">
+        <h2>Dashboard</h2>
+        <p id="todayDate"></p>
+      </div>
+      <div class="top-right">
+        <span class="live">● LIVE</span>
+        <div class="avatar"></div>
+      </div>
+    </header>
+
+    <section class="content">
+      <div id="statsGrid" class="grid stats-grid"></div>
+
+      <div id="pipeline" class="pipeline"></div>
+
+      <div class="grid row-2">
+        <div id="financeCard" class="card"></div>
+        <div id="leadsCard" class="card"></div>
+      </div>
+
+      <div class="grid row-2">
+        <div id="leaderboardCard" class="card"></div>
+        <div id="alertsCard" class="card"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast">Something went wrong while loading dashboard data.</div>
+
+  <script>
+    const ENDPOINTS = {
+      stats: '/api/stats',
+      finance: '/api/finance',
+      alerts: '/api/alerts',
+      leaderboard: '/api/leaderboard'
+    };
+
+    const PIPELINE_STAGES = ['LEAD', 'CONTACTED', 'MEETING_BOOKED', 'QUALIFIED', 'PROPOSAL_SENT', 'NEGOTIATING', 'CLOSED_WON', 'CLOSED_LOST'];
+    const PIPELINE_LABELS = {
+      LEAD: 'Lead',
+      CONTACTED: 'Contacted',
+      MEETING_BOOKED: 'Meeting',
+      QUALIFIED: 'Qualified',
+      PROPOSAL_SENT: 'Proposal',
+      NEGOTIATING: 'Negotiating',
+      CLOSED_WON: 'Won',
+      CLOSED_LOST: 'Lost'
+    };
+
+    const fmtMoney = (v = 0) => `$${Number(v).toLocaleString()}`;
+
+    function updateDate() {
+      const d = new Date();
+      document.getElementById('todayDate').textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    function showError(message = 'Failed to load dashboard data.') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3600);
+    }
+
+    function showSkeleton() {
+      document.getElementById('statsGrid').innerHTML = Array.from({ length: 4 }).map(() => `
+        <div class="card"><div class="skeleton"></div><div class="skeleton" style="height:30px"></div></div>`).join('');
+    }
+
+    function renderStats(data = {}) {
+      const items = [
+        { label: 'Total Leads', value: data.totalLeads || 0, note: 'Lead → discovery capacity' },
+        { label: 'Active Clients', value: data.activeClients || 0, note: 'Current onboarded clients' },
+        { label: 'Active Tasks', value: data.activeTasks || 0, note: 'In progress + in review' },
+        { label: 'Revenue Today', value: fmtMoney(data.revenueToday || 0), note: 'Closed payments today' }
+      ];
+      document.getElementById('statsGrid').innerHTML = items.map(i => `
+        <article class="card">
+          <div class="label">${i.label}</div>
+          <div class="value">${i.value}</div>
+          <div class="muted">${i.note}</div>
+        </article>
+      `).join('');
+    }
+
+    function renderPipeline(stageStats = {}) {
+      document.getElementById('pipeline').innerHTML = PIPELINE_STAGES.map(stage => `
+        <div class="card">
+          <div class="label">${PIPELINE_LABELS[stage]}</div>
+          <div class="value">${stageStats[stage] || 0}</div>
+          <div class="muted">${stage}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderFinance(data = {}) {
+      document.getElementById('financeCard').innerHTML = `
+        <div class="label">Finance Snapshot</div>
+        <div class="value">${fmtMoney(data.mrr || 0)}</div>
+        <ul class="list">
+          <li>Expenses: <strong>${fmtMoney(data.expenses || 0)}</strong></li>
+          <li>Net Profit: <strong>${fmtMoney(data.netProfit || 0)}</strong></li>
+          <li>Pipeline Value: <strong>${fmtMoney(data.pipelineValue || 0)}</strong></li>
+        </ul>`;
+    }
+
+    function renderRecentLeads(leads = []) {
+      const rows = leads.length ? leads.slice(0, 5).map(l => `<li>${l.company || 'Unknown'} — ${l.status || 'LEAD'} • ${fmtMoney(l.estimatedRevenue || 0)}</li>`).join('') : '<li>No recent leads yet.</li>';
+      document.getElementById('leadsCard').innerHTML = `<div class="label">Recent Leads</div><ul class="list">${rows}</ul>`;
+    }
+
+    function renderLeaderboard(data = []) {
+      const rows = data.length ? data.slice(0, 5).map((p, idx) => `<li>#${idx + 1} ${p.name || 'Unknown'} — Score ${p.score || 0}</li>`).join('') : '<li>No ranking data yet.</li>';
+      document.getElementById('leaderboardCard').innerHTML = `<div class="label">Team Leaderboard</div><ul class="list">${rows}</ul>`;
+    }
+
+    function renderAlerts(data = []) {
+      const rows = data.length ? data.slice(0, 5).map(a => `<li>${a.severity || 'info'}: ${a.message || 'Alert'}</li>`).join('') : '<li>No active alerts.</li>';
+      document.getElementById('alertsCard').innerHTML = `<div class="label">Alerts</div><ul class="list">${rows}</ul>`;
+    }
+
+    async function fetchJson(url, fallback) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(url);
+        return await r.json();
+      } catch {
+        return fallback;
+      }
+    }
+
+    async function loadDashboard() {
+      updateDate();
+      showSkeleton();
+      try {
+        const [stats, finance, alerts, leaderboard] = await Promise.all([
+          fetchJson(ENDPOINTS.stats, {}),
+          fetchJson(ENDPOINTS.finance, {}),
+          fetchJson(ENDPOINTS.alerts, []),
+          fetchJson(ENDPOINTS.leaderboard, [])
+        ]);
+
+        renderStats(stats);
+        renderPipeline(stats.stageStats || {});
+        renderFinance(finance);
+        renderRecentLeads(stats.recentLeads || []);
+        renderLeaderboard(leaderboard);
+        renderAlerts(alerts);
+      } catch {
+        showError('Main dashboard fetch failed.');
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
