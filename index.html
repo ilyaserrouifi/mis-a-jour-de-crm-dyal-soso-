@@ -1,1 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Niche CRM — Dashboard</title>
+  <meta name="description" content="Niche Consultation CRM Dashboard" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root{--bg:#0b0b0e;--card:rgba(255,255,255,.04);--card-h:rgba(255,255,255,.06);--primary:#2b2fff;--text:#f4f6ff;--muted:#9ca3b7;--border:rgba(255,255,255,.07);--ok:#33d69f;--warn:#ffcc5c;--danger:#ff5e73;--side:220px;--radius:14px}
+    *{box-sizing:border-box} body{margin:0;font-family:'DM Sans',sans-serif;color:var(--text);background:radial-gradient(circle at top right,#151932 0%,#0b0b0e 45%,#07080d 100%);min-height:100vh;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+    .blob{position:fixed;width:420px;height:420px;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}.blob-1{top:-120px;left:-120px;background:rgba(43,47,255,.25)}.blob-2{bottom:-160px;right:-120px;background:rgba(86,179,255,.18)}
+    .sidebar{position:fixed;top:0;left:0;width:var(--side);height:100vh;border-right:1px solid var(--border);background:rgba(10,11,16,.88);backdrop-filter:blur(14px);z-index:5;display:flex;flex-direction:column;padding:20px 14px}
+    .brand{padding:10px;margin-bottom:18px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02)}.brand h1{margin:0;font-size:21px}.brand p{margin:4px 0 0;color:var(--muted);font-size:11px;letter-spacing:.15em;text-transform:uppercase}
+    .nav-title{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:12px 10px}.nav-link{display:block;text-decoration:none;color:var(--muted);padding:10px 12px;border-radius:10px;margin-bottom:6px;border:1px solid transparent;transition:.2s}.nav-link:hover{color:var(--text);background:rgba(255,255,255,.03);border-color:var(--border)}.nav-link.active{background:rgba(43,47,255,.25);border-color:rgba(43,47,255,.55);color:#fff}
+    .logout{margin-top:auto;border:1px solid rgba(255,94,115,.4);color:#ff8394;background:rgba(255,94,115,.08);border-radius:10px;padding:10px 12px;text-decoration:none;text-align:center}
+    .main{margin-left:var(--side);position:relative;z-index:1}.topbar{padding:20px 32px;border-bottom:1px solid var(--border);background:rgba(8,9,14,.8);display:flex;justify-content:space-between;align-items:center}.title h2{margin:0;font-size:34px}.title p{margin:4px 0 0;color:var(--muted)}.live{font-size:12px;border:1px solid rgba(51,214,159,.4);color:#8cf0cb;background:rgba(51,214,159,.12);padding:6px 10px;border-radius:999px}
+    .content{padding:28px 32px}.grid{display:grid;gap:16px}.stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.map-grid,.row-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;transition:transform .2s,background .2s}.card:hover{transform:translateY(-2px);background:var(--card-h)}.label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}.value{font-size:32px;font-weight:800;margin:8px 0 6px}.muted{color:var(--muted);font-size:13px}
+    .pipeline{margin-top:16px;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(170px,1fr);gap:12px;overflow-x:auto;padding-bottom:8px}.list{list-style:none;margin:10px 0 0;padding:0}.list li{padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}.list li:last-child{border-bottom:0}
+    .dashboard-module{margin-top:16px}.module-title{margin:0 0 10px;font-size:15px;letter-spacing:.12em;color:#c7cede;text-transform:uppercase}.kpi-line{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}.kpi-line:last-child{border-bottom:0}.target{color:var(--muted)}
+    #leadsMap{height:350px;border-radius:12px;border:1px solid var(--border);margin-top:10px}.country-line{display:flex;justify-content:space-between;gap:8px}
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.02),rgba(255,255,255,.08),rgba(255,255,255,.02));background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:10px;height:18px;margin-top:10px}@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+    #toast{position:fixed;right:20px;bottom:20px;background:rgba(255,94,115,.14);color:#ffc3cc;border:1px solid rgba(255,94,115,.38);border-radius:10px;padding:12px 16px;z-index:20;opacity:0;transform:translateY(16px);transition:.25s;pointer-events:none}#toast.show{opacity:1;transform:translateY(0)}
+    @media (max-width:1024px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.map-grid,.row-2{grid-template-columns:1fr}} @media (max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.stats-grid{grid-template-columns:1fr}.topbar,.content{padding-left:16px;padding-right:16px}}
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div><div class="blob blob-2"></div>
+  <aside class="sidebar"><div class="brand"><h1>Niche</h1><p>CRM Platform</p></div><div><div class="nav-title">Main</div><a class="nav-link active" href="index.html">Dashboard</a><a class="nav-link" href="pages/pipeline.html">Pipeline</a></div><div><div class="nav-title">People</div><a class="nav-link" href="pages/cold-callers.html">Cold Callers</a><a class="nav-link" href="pages/outreachers.html">Outreachers</a><a class="nav-link" href="pages/freelancers.html">Freelancers</a><a class="nav-link" href="pages/clients.html">Clients</a></div><div><div class="nav-title">Work</div><a class="nav-link" href="pages/tasks.html">Tasks</a><a class="nav-link" href="pages/projects.html">Projects</a><a class="nav-link" href="pages/finance.html">Finance</a><a class="nav-link" href="pages/analytics.html">Analytics</a><a class="nav-link" href="pages/reports.html">Reports</a></div><a class="logout" href="#">Logout</a></aside>
+  <main class="main">
+    <header class="topbar"><div class="title"><h2>Dashboard</h2><p id="todayDate"></p></div><span class="live">● LIVE</span></header>
+    <section class="content">
+      <div id="statsGrid" class="grid stats-grid"></div>
+      <div class="card dashboard-module" id="moduleOverview"></div>
+      <div id="pipeline" class="pipeline"></div>
+      <div class="grid map-grid"><div class="card"><div class="label">🌍 Leads by Region</div><div id="leadsMap"></div></div><div id="topCountriesCard" class="card"></div></div>
+      <div class="grid row-2" style="margin-top:16px"><div id="financeCard" class="card"></div><div id="leadsCard" class="card"></div></div>
+      <div class="grid row-2" style="margin-top:16px"><div id="leaderboardCard" class="card"></div><div id="alertsCard" class="card"></div></div>
+    </section>
+  </main>
+  <div id="toast">Something went wrong while loading dashboard data.</div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const ENDPOINTS = { stats:'/api/stats', finance:'/api/finance', alerts:'/api/alerts', leaderboard:'/api/leaderboard' };
+    const PIPELINE_STAGES = ['LEAD','CONTACTED','MEETING_BOOKED','QUALIFIED','PROPOSAL_SENT','NEGOTIATING','CLOSED_WON','CLOSED_LOST'];
+    const PIPELINE_LABELS = { LEAD:'Lead', CONTACTED:'Contacted', MEETING_BOOKED:'Meeting', QUALIFIED:'Qualified', PROPOSAL_SENT:'Proposal', NEGOTIATING:'Negotiating', CLOSED_WON:'Won', CLOSED_LOST:'Lost' };
+    const fmtMoney = (v=0)=>`$${Number(v||0).toLocaleString()}`;
+    let map, mapMarkers=[];
+
+    const safe=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+    function updateDate(){document.getElementById('todayDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});}    
+    function showError(msg='Failed to load dashboard data.'){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3600);}
+    function showSkeleton(){document.getElementById('statsGrid').innerHTML=Array.from({length:4}).map(()=>'<div class="card"><div class="skeleton"></div><div class="skeleton" style="height:30px"></div></div>').join('');document.getElementById('moduleOverview').innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';}
+
+    function renderStats(data={}){
+      const items=[
+        {label:'Total Leads',value:safe(data.totalLeads),note:'Lead → discovery capacity'},
+        {label:'Active Clients',value:safe(data.activeClients),note:'Current onboarded clients'},
+        {label:'Active Tasks',value:safe(data.activeTasks),note:'In progress + in review'},
+        {label:'Revenue Today',value:fmtMoney(data.revenueToday),note:'Closed payments today'}
+      ];
+      document.getElementById('statsGrid').innerHTML=items.map(i=>`<article class="card"><div class="label">${i.label}</div><div class="value">${i.value}</div><div class="muted">${i.note}</div></article>`).join('');
+    }
+
+    function renderModuleOverview(stats={}, finance={}, leaderboard=[]){
+      const calls=safe(stats.callsMade), meetings=safe(stats.meetingsBooked), closes=safe(stats.dealsClosed);
+      const totalPipeline=safe(finance.pipelineValue), monthPipeline=safe(finance.pipelineThisMonth), riskPipeline=safe(finance.pipelineAtRisk);
+      const topPerformer=leaderboard[0]?.name || 'N/A';
+      const needsAttention=leaderboard.length? (leaderboard[leaderboard.length-1]?.name || 'N/A') : 'N/A';
+      document.getElementById('moduleOverview').innerHTML=`
+        <h3 class="module-title">Module 1 — Dashboard (Real-Time)</h3>
+        <div class="kpi-line"><strong>Today's Numbers</strong><span class="target"></span></div>
+        <div class="kpi-line"><span>Calls Made</span><span>${calls} / 1,500</span></div>
+        <div class="kpi-line"><span>Meetings Booked</span><span>${meetings} / 30</span></div>
+        <div class="kpi-line"><span>Deals Closed</span><span>${closes} / 6</span></div>
+        <div class="kpi-line"><span>Revenue Today</span><span>${fmtMoney(stats.revenueToday)}</span></div>
+        <div class="kpi-line"><strong>Pipeline Value</strong><span></span></div>
+        <div class="kpi-line"><span>Total</span><span>${fmtMoney(totalPipeline)}</span></div>
+        <div class="kpi-line"><span>This Month</span><span>${fmtMoney(monthPipeline)}</span></div>
+        <div class="kpi-line"><span>At Risk</span><span style="color:var(--warn)">${fmtMoney(riskPipeline)}</span></div>
+        <div class="kpi-line"><strong>Team Performance</strong><span></span></div>
+        <div class="kpi-line"><span>Top Performer</span><span>${topPerformer}</span></div>
+        <div class="kpi-line"><span>Needs Attention</span><span style="color:var(--danger)">${needsAttention}</span></div>
+        <div class="kpi-line"><strong>Finance Snapshot</strong><span></span></div>
+        <div class="kpi-line"><span>MRR</span><span>${fmtMoney(finance.mrr)}</span></div>
+        <div class="kpi-line"><span>Expenses</span><span>${fmtMoney(finance.expenses)}</span></div>
+        <div class="kpi-line"><span>Net Profit</span><span style="color:var(--ok)">${fmtMoney(finance.netProfit)}</span></div>`;
+    }
+
+    function renderPipeline(stageStats={}){document.getElementById('pipeline').innerHTML=PIPELINE_STAGES.map(s=>`<div class="card"><div class="label">${PIPELINE_LABELS[s]}</div><div class="value">${safe(stageStats[s])}</div><div class="muted">${s}</div></div>`).join('');}
+    function renderFinance(data={}){document.getElementById('financeCard').innerHTML=`<div class="label">Finance Snapshot</div><div class="value">${fmtMoney(data.mrr)}</div><ul class="list"><li>Expenses: <strong>${fmtMoney(data.expenses)}</strong></li><li>Net Profit: <strong>${fmtMoney(data.netProfit)}</strong></li><li>Pipeline Value: <strong>${fmtMoney(data.pipelineValue)}</strong></li></ul>`;}
+    function renderRecentLeads(leads=[]){const rows=leads.length?leads.slice(0,5).map(l=>`<li>${l.company||'Unknown'} — ${l.status||'LEAD'} • ${fmtMoney(l.estimatedRevenue)}</li>`).join(''):'<li>No recent leads yet.</li>';document.getElementById('leadsCard').innerHTML=`<div class="label">Recent Leads</div><ul class="list">${rows}</ul>`;}
+    function renderLeaderboard(data=[]){const rows=data.length?data.slice(0,5).map((p,i)=>`<li>#${i+1} ${p.name||'Unknown'} — Score ${safe(p.score)}</li>`).join(''):'<li>No ranking data yet.</li>';document.getElementById('leaderboardCard').innerHTML=`<div class="label">Team Leaderboard</div><ul class="list">${rows}</ul>`;}
+    function renderAlerts(data=[]){const rows=data.length?data.slice(0,5).map(a=>`<li>${a.severity||'info'}: ${a.message||'Alert'}</li>`).join(''):'<li>No active alerts.</li>';document.getElementById('alertsCard').innerHTML=`<div class="label">Alerts</div><ul class="list">${rows}</ul>`;}
+
+    function initMap(){if(map)return;map=L.map('leadsMap',{zoomControl:true,scrollWheelZoom:true}).setView([34.02,-6.84],2);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);}
+    function renderGeo(geo={}){initMap();mapMarkers.forEach(m=>map.removeLayer(m));mapMarkers=[];const locations=Array.isArray(geo.locations)?geo.locations.filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lng)):[];if(!locations.length){document.getElementById('topCountriesCard').innerHTML='<div class="label">🏆 Top Countries</div><p class="muted">No client location data yet.</p>';return;}const b=[];for(const loc of locations){const mk=L.circleMarker([loc.lat,loc.lng],{radius:Math.max(6,Math.min(18,safe(loc.leads,1)*1.4)),color:'#2b2fff',fillColor:'#57b2ff',fillOpacity:.65,weight:1}).addTo(map);mk.bindPopup(`<strong>${loc.city||loc.country||'Location'}</strong><br/>Leads: ${safe(loc.leads)}<br/>Revenue: ${fmtMoney(loc.revenue)}`);mapMarkers.push(mk);b.push([loc.lat,loc.lng]);}map.fitBounds(b,{padding:[20,20],maxZoom:5});const agg=[...locations].reduce((acc,i)=>{const k=i.country||'Unknown';const p=acc.get(k)||{country:k,leads:0,revenue:0};p.leads+=safe(i.leads);p.revenue+=safe(i.revenue);acc.set(k,p);return acc;},new Map());const top=[...agg.values()].sort((a,b)=>b.leads-a.leads).slice(0,6);document.getElementById('topCountriesCard').innerHTML=`<div class="label">🏆 Top Countries</div><ul class="list">${top.map(c=>`<li class="country-line"><span>${c.country}</span><span>${c.leads} leads • ${fmtMoney(c.revenue)}</span></li>`).join('')}</ul>`;}
+
+    async function fetchJson(url,fallback){try{const r=await fetch(url);if(!r.ok)throw new Error(url);return await r.json();}catch{return fallback;}}
+    async function loadDashboard(){updateDate();showSkeleton();try{const [stats,finance,alerts,leaderboard]=await Promise.all([fetchJson(ENDPOINTS.stats,{}),fetchJson(ENDPOINTS.finance,{}),fetchJson(ENDPOINTS.alerts,[]),fetchJson(ENDPOINTS.leaderboard,[])]);renderStats(stats);renderModuleOverview(stats,finance,leaderboard);renderPipeline(stats.stageStats||{});renderGeo(stats.geo||stats.map||{});renderFinance(finance);renderRecentLeads(stats.recentLeads||[]);renderLeaderboard(leaderboard);renderAlerts(alerts);}catch{showError('Main dashboard fetch failed.')}}
+    loadDashboard();
+  </script>
+</body>
+</html>
