@@ -1,1 +1,189 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Niche CRM — Dashboard</title>
+  <meta name="description" content="Niche Consultation CRM Dashboard" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root{
+      --bg:#0b0b0e;--bg2:#0f1220;--card:rgba(255,255,255,.04);--card2:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.07);--txt:#ededf2;--muted:rgba(237,237,242,.45);--primary:#2b2fff;
+      --ok:#33d69f;--warn:#ffcc5c;--danger:#ff5e73;--side:220px;--r:14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'DM Sans',sans-serif;background:radial-gradient(circle at top right,#151932 0%,#0b0b0e 45%,#07080d 100%);color:var(--txt);overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+    .blob{position:fixed;width:380px;height:380px;border-radius:50%;filter:blur(70px);pointer-events:none;z-index:0}
+    .b1{top:-100px;left:-100px;background:rgba(43,47,255,.22)} .b2{bottom:-130px;right:-100px;background:rgba(87,178,255,.16)}
 
+    .sidebar{position:fixed;left:0;top:0;width:var(--side);height:100vh;border-right:1px solid var(--border);padding:20px 14px;background:rgba(10,11,16,.9);z-index:4}
+    .brand{padding:10px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02)}
+    .brand b{font-size:20px}.brand p{margin:4px 0 0;color:var(--muted);font-size:11px;letter-spacing:.15em}
+    .nav-title{color:var(--muted);font-size:11px;letter-spacing:.16em;margin:14px 10px 8px;text-transform:uppercase}
+    .nav a{display:block;color:var(--muted);text-decoration:none;padding:9px 12px;margin-top:6px;border-radius:9px;border:1px solid transparent}
+    .nav a.active,.nav a:hover{background:rgba(43,47,255,.25);border-color:rgba(43,47,255,.5);color:#fff}
+
+    .main{margin-left:var(--side);position:relative;z-index:1}
+    .topbar{position:sticky;top:0;z-index:3;padding:20px 32px;border-bottom:1px solid var(--border);background:rgba(9,10,14,.92);display:flex;justify-content:space-between;align-items:center}
+    .title h1{margin:0;font-size:34px}.title p{margin:4px 0 0;color:var(--muted)}
+    .live{font-size:12px;border:1px solid rgba(51,214,159,.4);color:#8cf0cb;background:rgba(51,214,159,.12);padding:6px 10px;border-radius:999px}
+
+    .content{padding:28px 32px;display:grid;gap:16px}
+    .grid{display:grid;gap:16px}
+    .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .two{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;transition:.2s}
+    .card:hover{transform:translateY(-2px);background:var(--card2)}
+    .label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+    .value{font-size:32px;font-weight:800;margin:8px 0 4px}
+    .muted{font-size:13px;color:var(--muted)}
+
+    .module .line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+    .module .line:last-child{border-bottom:0}
+    .pipeline{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(165px,1fr);gap:12px;overflow-x:auto;padding-bottom:6px}
+    .list{list-style:none;margin:10px 0 0;padding:0}.list li{padding:8px 0;border-bottom:1px solid var(--border)}.list li:last-child{border-bottom:0}
+
+    #map{height:340px;border-radius:12px;border:1px solid var(--border);margin-top:10px}
+    .country-row{display:flex;justify-content:space-between;gap:8px}
+    .skeleton{height:14px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.03),rgba(255,255,255,.1),rgba(255,255,255,.03));background-size:200% 100%;animation:sh 1.2s infinite}
+    @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    #toast{position:fixed;right:20px;bottom:20px;background:rgba(255,94,115,.18);border:1px solid rgba(255,94,115,.4);color:#ffc4cc;padding:10px 12px;border-radius:9px;display:none;z-index:9}
+
+    @media(max-width:1024px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}}
+    @media(max-width:768px){.sidebar{display:none}.main{margin:0}.topbar,.content{padding-left:16px;padding-right:16px}.stats{grid-template-columns:1fr}.title h1{font-size:28px}}
+  </style>
+</head>
+<body>
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <aside class="sidebar">
+    <div class="brand"><b>Niche</b><p>CRM PLATFORM</p></div>
+    <div class="nav">
+      <div class="nav-title">Main</div>
+      <a class="active" href="index.html">Dashboard</a>
+      <a href="pages/pipeline.html">Pipeline</a>
+      <div class="nav-title">People</div>
+      <a href="pages/cold-callers.html">Cold Callers</a>
+      <a href="pages/outreachers.html">Outreachers</a>
+      <a href="pages/freelancers.html">Freelancers</a>
+      <a href="pages/clients.html">Clients</a>
+      <div class="nav-title">Work</div>
+      <a href="pages/tasks.html">Tasks</a>
+      <a href="pages/projects.html">Projects</a>
+      <a href="pages/finance.html">Finance</a>
+      <a href="pages/analytics.html">Analytics</a>
+      <a href="pages/reports.html">Reports</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title"><h1>Dashboard</h1><p id="today"></p></div>
+      <span class="live">● LIVE</span>
+    </header>
+
+    <section class="content">
+      <div id="stats" class="grid stats"></div>
+
+      <div id="module" class="card module"></div>
+
+      <div id="pipeline" class="pipeline"></div>
+
+      <div class="grid two">
+        <div class="card"><div class="label">🌍 Leads by Region</div><div id="map"></div></div>
+        <div id="countries" class="card"></div>
+      </div>
+
+      <div class="grid two">
+        <div id="finance" class="card"></div>
+        <div id="recent" class="card"></div>
+      </div>
+
+      <div class="grid two">
+        <div id="leaderboard" class="card"></div>
+        <div id="alerts" class="card"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const ENDPOINTS={stats:'/api/stats',finance:'/api/finance',alerts:'/api/alerts',leaderboard:'/api/leaderboard'};
+    const STAGES=['LEAD','CONTACTED','MEETING_BOOKED','QUALIFIED','PROPOSAL_SENT','NEGOTIATING','CLOSED_WON','CLOSED_LOST'];
+    const STAGE_LABEL={LEAD:'Lead',CONTACTED:'Contacted',MEETING_BOOKED:'Meeting',QUALIFIED:'Qualified',PROPOSAL_SENT:'Proposal',NEGOTIATING:'Negotiating',CLOSED_WON:'Won',CLOSED_LOST:'Lost'};
+    const money=v=>`$${Number(v||0).toLocaleString()}`; const safe=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+    const byId=id=>document.getElementById(id);
+    let map,markers=[];
+
+    function toast(msg){const t=byId('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800)}
+    function setDate(){byId('today').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
+
+    function showSkeleton(){
+      byId('stats').innerHTML=Array.from({length:4}).map(()=>`<div class="card"><div class="skeleton"></div><div class="skeleton" style="height:28px;margin-top:8px"></div></div>`).join('');
+      byId('module').innerHTML='<div class="skeleton"></div><div class="skeleton" style="margin-top:8px"></div><div class="skeleton" style="margin-top:8px"></div>';
+      byId('countries').innerHTML='<div class="skeleton"></div><div class="skeleton" style="margin-top:8px"></div>';
+    }
+
+    function renderStats(s={}){const items=[
+      ['Total Leads',safe(s.totalLeads), 'Lead → discovery capacity'],
+      ['Active Clients',safe(s.activeClients), 'Current onboarded clients'],
+      ['Active Tasks',safe(s.activeTasks), 'In progress + in review'],
+      ['Revenue Today',money(s.revenueToday), 'Closed payments today']
+    ]; byId('stats').innerHTML=items.map(i=>`<article class="card"><div class="label">${i[0]}</div><div class="value">${i[1]}</div><div class="muted">${i[2]}</div></article>`).join('')}
+
+    function renderModule(stats={},finance={},leaders=[]){
+      const top=leaders[0]?.name||'N/A', low=leaders.length?leaders[leaders.length-1].name:'N/A';
+      byId('module').innerHTML=`
+        <div class="label">Module 1 — Dashboard Real-time</div>
+        <div class="line"><b>Today's Numbers</b><span></span></div>
+        <div class="line"><span>Calls Made</span><span>${safe(stats.callsMade)} / 1,500</span></div>
+        <div class="line"><span>Meetings Booked</span><span>${safe(stats.meetingsBooked)} / 30</span></div>
+        <div class="line"><span>Deals Closed</span><span>${safe(stats.dealsClosed)} / 6</span></div>
+        <div class="line"><span>Revenue Today</span><span>${money(stats.revenueToday)}</span></div>
+        <div class="line"><b>Pipeline Value</b><span></span></div>
+        <div class="line"><span>Total</span><span>${money(finance.pipelineValue)}</span></div>
+        <div class="line"><span>This Month</span><span>${money(finance.pipelineThisMonth)}</span></div>
+        <div class="line"><span>At Risk</span><span style="color:var(--warn)">${money(finance.pipelineAtRisk)}</span></div>
+        <div class="line"><b>Team Performance</b><span></span></div>
+        <div class="line"><span>Top Performer</span><span>${top}</span></div>
+        <div class="line"><span>Needs Attention</span><span style="color:var(--danger)">${low}</span></div>
+        <div class="line"><b>Finance Snapshot</b><span></span></div>
+        <div class="line"><span>MRR</span><span>${money(finance.mrr)}</span></div>
+        <div class="line"><span>Expenses</span><span>${money(finance.expenses)}</span></div>
+        <div class="line"><span>Net Profit</span><span style="color:var(--ok)">${money(finance.netProfit)}</span></div>`;
+    }
+
+    function renderPipeline(stage={}){byId('pipeline').innerHTML=STAGES.map(k=>`<div class="card"><div class="label">${STAGE_LABEL[k]}</div><div class="value">${safe(stage[k])}</div><div class="muted">${k}</div></div>`).join('')}
+    function renderFinance(f={}){byId('finance').innerHTML=`<div class="label">Finance Snapshot</div><div class="value">${money(f.mrr)}</div><ul class="list"><li>Expenses: <b>${money(f.expenses)}</b></li><li>Net Profit: <b>${money(f.netProfit)}</b></li><li>Pipeline Value: <b>${money(f.pipelineValue)}</b></li></ul>`}
+    function renderRecent(arr=[]){const rows=arr.length?arr.slice(0,6).map(l=>`<li>${l.company||'Unknown'} — ${l.status||'LEAD'} • ${money(l.estimatedRevenue)}</li>`).join(''):'<li>No recent leads yet.</li>';byId('recent').innerHTML=`<div class="label">Recent Leads</div><ul class="list">${rows}</ul>`}
+    function renderLeaders(arr=[]){const rows=arr.length?arr.slice(0,6).map((p,i)=>`<li>#${i+1} ${p.name||'Unknown'} — Score ${safe(p.score)}</li>`).join(''):'<li>No ranking data yet.</li>';byId('leaderboard').innerHTML=`<div class="label">Team Leaderboard</div><ul class="list">${rows}</ul>`}
+    function renderAlerts(arr=[]){const rows=arr.length?arr.slice(0,6).map(a=>`<li>${a.severity||'info'}: ${a.message||'Alert'}</li>`).join(''):'<li>No active alerts.</li>';byId('alerts').innerHTML=`<div class="label">Alerts</div><ul class="list">${rows}</ul>`}
+
+    function initMap(){if(map)return;map=L.map('map',{zoomControl:true,scrollWheelZoom:true}).setView([34.02,-6.84],2);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map)}
+    function renderGeo(geo={}){
+      initMap(); markers.forEach(m=>map.removeLayer(m)); markers=[];
+      const loc=Array.isArray(geo.locations)?geo.locations.filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lng)):[];
+      if(!loc.length){byId('countries').innerHTML='<div class="label">🏆 Top Countries</div><p class="muted">No client location data yet.</p>';return}
+      const bounds=[];
+      for(const p of loc){const mk=L.circleMarker([p.lat,p.lng],{radius:Math.max(6,Math.min(18,safe(p.leads,1)*1.4)),color:'#2b2fff',fillColor:'#57b2ff',fillOpacity:.65,weight:1}).addTo(map);mk.bindPopup(`<b>${p.city||p.country||'Location'}</b><br>Leads: ${safe(p.leads)}<br>Revenue: ${money(p.revenue)}`);markers.push(mk);bounds.push([p.lat,p.lng])}
+      map.fitBounds(bounds,{padding:[20,20],maxZoom:5});
+      const agg=[...loc].reduce((a,x)=>{const k=x.country||'Unknown';const r=a.get(k)||{country:k,leads:0,revenue:0};r.leads+=safe(x.leads);r.revenue+=safe(x.revenue);a.set(k,r);return a},new Map());
+      const top=[...agg.values()].sort((a,b)=>b.leads-a.leads).slice(0,6);
+      byId('countries').innerHTML=`<div class="label">🏆 Top Countries</div><ul class="list">${top.map(c=>`<li class="country-row"><span>${c.country}</span><span>${c.leads} leads • ${money(c.revenue)}</span></li>`).join('')}</ul>`;
+    }
+
+    async function fetchJson(url,fb){try{const r=await fetch(url);if(!r.ok)throw new Error('x');return await r.json()}catch{return fb}}
+    async function load(){setDate();showSkeleton();try{const [s,f,a,l]=await Promise.all([fetchJson(ENDPOINTS.stats,{}),fetchJson(ENDPOINTS.finance,{}),fetchJson(ENDPOINTS.alerts,[]),fetchJson(ENDPOINTS.leaderboard,[])]);
+      renderStats(s);renderModule(s,f,l);renderPipeline(s.stageStats||{});renderGeo(s.geo||s.map||{});renderFinance(f);renderRecent(s.recentLeads||[]);renderLeaders(l);renderAlerts(a);
+    }catch{toast('Failed to load dashboard data')}}
+    load();
+  </script>
+</body>
+</html>
